@@ -79,13 +79,36 @@
             overflow: hidden;
             transition: transform 0.2s;
             border-bottom: 4px solid var(--accent-blue);
+            display: flex;
+            flex-direction: column;
         }
         .news-card:hover { transform: translateY(-5px); }
-        .news-card img { width: 100%; height: 180px; object-fit: cover; }
-        .news-content { padding: 15px; }
-        .news-date { color: var(--accent-orange); font-size: 0.9rem; margin-bottom: 5px; }
-        .news-title { font-size: 1.1rem; margin: 0 0 10px 0; }
-        .news-link { color: var(--accent-blue); text-decoration: none; font-weight: bold; }
+        
+        .news-img-placeholder {
+            height: 140px;
+            background: linear-gradient(45deg, #1e3c72, #2a5298);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+        }
+
+        .news-content { padding: 15px; flex-grow: 1; display: flex; flex-direction: column; }
+        .news-date { color: var(--accent-orange); font-size: 0.8rem; margin-bottom: 5px; font-weight: bold; }
+        .news-title { font-size: 1.1rem; margin: 0 0 10px 0; line-height: 1.4; }
+        .news-snippet { font-size: 0.9rem; color: #ccc; margin-bottom: 15px; flex-grow: 1; }
+        .news-link { 
+            color: white; 
+            background-color: var(--accent-blue);
+            padding: 8px 12px;
+            text-decoration: none; 
+            font-weight: bold; 
+            border-radius: 4px;
+            text-align: center;
+            align-self: flex-start;
+            font-size: 0.9rem;
+        }
+        .news-link:hover { background-color: #008ecc; }
 
         /* Carte Boutique */
         .shop-card {
@@ -96,9 +119,9 @@
             border: 1px solid #333;
             position: relative;
         }
-        .rarity-bm { border-bottom: 4px solid #b400ff; } /* Black Market */
-        .rarity-exo { border-bottom: 4px solid #ff0000; } /* Exotic */
-        .rarity-imp { border-bottom: 4px solid #ff7f00; } /* Import */
+        .rarity-bm { border-bottom: 4px solid #b400ff; }
+        .rarity-exo { border-bottom: 4px solid #ff0000; }
+        .rarity-imp { border-bottom: 4px solid #ff7f00; }
 
         .shop-img-box {
             height: 150px;
@@ -119,7 +142,7 @@
             font-weight: bold;
         }
 
-        .loading { text-align: center; font-size: 1.5rem; color: var(--text-secondary); }
+        .loading { text-align: center; font-size: 1.5rem; color: var(--text-secondary); width: 100%; grid-column: 1 / -1; }
 
     </style>
 </head>
@@ -132,12 +155,12 @@
     <div class="container">
         
         <div class="tabs">
-            <button class="tab-btn active" onclick="showTab('news')">📰 Actualités</button>
-            <button class="tab-btn" onclick="showTab('shop')">🛒 Boutique du jour</button>
+            <button class="tab-btn active" onclick="showTab('news')">📰 Dernières Actus</button>
+            <button class="tab-btn" onclick="showTab('shop')">🛒 Boutique (Exemple)</button>
         </div>
 
         <div id="news-grid" class="grid active">
-            <div class="loading">Chargement des actus...</div>
+            <div class="loading">📡 Recherche des actus en cours...</div>
         </div>
 
         <div id="shop-grid" class="grid">
@@ -150,82 +173,16 @@
         function showTab(tabName) {
             document.querySelectorAll('.grid').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-            
             document.getElementById(tabName + '-grid').classList.add('active');
-            // Trouver le bouton correspondant (simplifié)
             event.target.classList.add('active');
         }
 
-        // --- 1. RECUPERER LES ACTUS (RSS) ---
-        // On utilise rss2json pour convertir le flux RSS officiel en JSON lisible
-        const RSS_URL = 'https://www.rocketleague.com/rss.xml'; // URL exemple (souvent changeante)
-        // Note: Rocket League change souvent son RSS. Si celui-ci casse, on utilise un proxy générique.
-        
+        // --- 1. RECUPERER LES ACTUS (VIA STEAM API) ---
         async function fetchNews() {
-            try {
-                // On utilise un service tiers gratuit pour lire le RSS sans blocage
-                const response = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=https%3A%2F%2Fwww.rocketleague.com%2Frss.xml`);
-                const data = await response.json();
-                
-                const container = document.getElementById('news-grid');
-                container.innerHTML = ''; // Vider le chargement
-
-                if(data.items) {
-                    data.items.slice(0, 9).forEach(item => { // Prendre les 9 dernières
-                        const card = document.createElement('div');
-                        card.className = 'news-card';
-                        
-                        // Image par défaut si pas d'image dans le flux
-                        const imgUrl = item.thumbnail || 'https://upload.wikimedia.org/wikipedia/commons/e/e0/Rocket_League_coverart.jpg';
-
-                        card.innerHTML = `
-                            <img src="${imgUrl}" alt="News Image">
-                            <div class="news-content">
-                                <div class="news-date">${item.pubDate.split(' ')[0]}</div>
-                                <h3 class="news-title">${item.title}</h3>
-                                <a href="${item.link}" target="_blank" class="news-link">Lire l'article &rarr;</a>
-                            </div>
-                        `;
-                        container.appendChild(card);
-                    });
-                }
-            } catch (error) {
-                document.getElementById('news-grid').innerHTML = '<p>Impossible de charger les actus pour le moment.</p>';
-            }
-        }
-
-        // --- 2. SIMULATION BOUTIQUE (API PRIVÉE) ---
-        // Comme l'API boutique est privée, voici comment on structure les données manuellement
-        // Pour le rendre automatique, il faut un Backend Node.js connecté à une API tierce.
-        const shopData = [
-            { name: "Fennec (Titanium White)", type: "Car Body", rarity: "imp", price: 800, img: "https://static.wikia.nocookie.net/rocketleague/images/6/63/Fennec_body_icon.png" },
-            { name: "Zomba", type: "Wheels", rarity: "exo", price: 700, img: "https://static.wikia.nocookie.net/rocketleague/images/8/88/Zomba_wheel_icon.png" },
-            { name: "Dissolver", type: "Decal", rarity: "bm", price: 2000, img: "https://static.wikia.nocookie.net/rocketleague/images/c/c7/Dissolver_decal_icon.png" },
-            { name: "Dueling Dragons", type: "Goal Explosion", rarity: "bm", price: 2000, img: "https://static.wikia.nocookie.net/rocketleague/images/c/c9/Dueling_Dragons_goal_explosion_icon.png" }
-        ];
-
-        function loadShop() {
-            const container = document.getElementById('shop-grid');
+            const container = document.getElementById('news-grid');
             
-            shopData.forEach(item => {
-                const div = document.createElement('div');
-                div.className = `shop-card rarity-${item.rarity}`;
-                div.innerHTML = `
-                    <div class="shop-img-box">
-                        <img src="${item.img}" alt="${item.name}" style="max-width:80%; max-height:80%;">
-                    </div>
-                    <h3>${item.name}</h3>
-                    <p style="color:#aaa; font-size:0.9rem;">${item.type}</p>
-                    <div class="shop-credits">© ${item.price}</div>
-                `;
-                container.appendChild(div);
-            });
-        }
-
-        // Lancement au démarrage
-        fetchNews();
-        loadShop();
-
-    </script>
-</body>
-</html>
+            try {
+                // On utilise un proxy 'allorigins' pour contourner la sécurité du navigateur
+                // On appelle l'API Steam News pour Rocket League (AppID: 252950)
+                const proxyUrl = 'https://api.allorigins.win/get?url=';
+                const steamUrl = encodeURIComponent('https://api.steampowered.com/ISteamNews/GetNewsForApp/v0002/?
