@@ -81,22 +81,31 @@
             border-bottom: 4px solid var(--accent-blue);
             display: flex;
             flex-direction: column;
+            height: 100%;
         }
         .news-card:hover { transform: translateY(-5px); }
         
-        .news-img-placeholder {
-            height: 140px;
-            background: linear-gradient(45deg, #1e3c72, #2a5298);
+        /* Zone image ou icône */
+        .news-media {
+            height: 160px;
+            background: #121212;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 3rem;
+            overflow: hidden;
+        }
+        .news-media img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .news-icon {
+            font-size: 4rem;
         }
 
         .news-content { padding: 15px; flex-grow: 1; display: flex; flex-direction: column; }
         .news-date { color: var(--accent-orange); font-size: 0.8rem; margin-bottom: 5px; font-weight: bold; }
-        .news-title { font-size: 1.1rem; margin: 0 0 10px 0; line-height: 1.4; }
-        .news-snippet { font-size: 0.9rem; color: #ccc; margin-bottom: 15px; flex-grow: 1; }
+        .news-title { font-size: 1.1rem; margin: 0 0 10px 0; line-height: 1.4; color: white;}
         .news-link { 
             color: white; 
             background-color: var(--accent-blue);
@@ -107,6 +116,7 @@
             text-align: center;
             align-self: flex-start;
             font-size: 0.9rem;
+            margin-top: auto; /* Pousse le bouton vers le bas */
         }
         .news-link:hover { background-color: #008ecc; }
 
@@ -136,53 +146,3 @@
             background-color: #000;
             color: #fff;
             padding: 5px 10px;
-            border-radius: 20px;
-            display: inline-block;
-            margin-top: 10px;
-            font-weight: bold;
-        }
-
-        .loading { text-align: center; font-size: 1.5rem; color: var(--text-secondary); width: 100%; grid-column: 1 / -1; }
-
-    </style>
-</head>
-<body>
-
-    <header>
-        <h1>🏎️ Rocket League Central</h1>
-    </header>
-
-    <div class="container">
-        
-        <div class="tabs">
-            <button class="tab-btn active" onclick="showTab('news')">📰 Dernières Actus</button>
-            <button class="tab-btn" onclick="showTab('shop')">🛒 Boutique (Exemple)</button>
-        </div>
-
-        <div id="news-grid" class="grid active">
-            <div class="loading">📡 Recherche des actus en cours...</div>
-        </div>
-
-        <div id="shop-grid" class="grid">
-            </div>
-
-    </div>
-
-    <script>
-        // --- GESTION DES ONGLETS ---
-        function showTab(tabName) {
-            document.querySelectorAll('.grid').forEach(el => el.classList.remove('active'));
-            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-            document.getElementById(tabName + '-grid').classList.add('active');
-            event.target.classList.add('active');
-        }
-
-        // --- 1. RECUPERER LES ACTUS (VIA STEAM API) ---
-        async function fetchNews() {
-            const container = document.getElementById('news-grid');
-            
-            try {
-                // On utilise un proxy 'allorigins' pour contourner la sécurité du navigateur
-                // On appelle l'API Steam News pour Rocket League (AppID: 252950)
-                const proxyUrl = 'https://api.allorigins.win/get?url=';
-                const steamUrl = encodeURIComponent('https://api.steampowered.com/ISteamNews/GetNewsForApp/v0002/?
